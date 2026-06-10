@@ -1,0 +1,10 @@
+*.csv
+*.log
+*.enc
+*.key
+__pycache__/
+venv/
+data/
+logs/
+*.pyc
+.vault*
