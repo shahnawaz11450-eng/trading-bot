@@ -1117,29 +1117,6 @@ class CoreEngine:
         df['vol_momentum']=df['volume'].pct_change(10)
         df['hl_range']=(df['high']-df['low'])/(df['close']+1e-9)
         df['close_position']=(df['close']-df['low'])/(df['high']-df['low']+1e-9)
-
-        # --- Alpha Features (OHLCV se derived) ---
-        # Realized volatility
-        log_ret = np.log(df['close']/df['close'].shift(1)).fillna(0)
-        df['rvol'] = log_ret.rolling(20).std() * np.sqrt(288)
-        df['vol_breakout'] = (df['rvol'] > df['rvol'].rolling(100).quantile(0.8)).astype(float)
-        df['atr_expansion'] = (df['atr_14'] > df['atr_14'].rolling(50).mean() * 1.5).astype(float)
-
-        # Divergence features
-        rsi = df['rsi_14']
-        price = df['close']
-        df['bullish_divergence'] = ((price < price.shift(5)) & (rsi > rsi.shift(5))).astype(float)
-        df['bearish_divergence'] = ((price > price.shift(5)) & (rsi < rsi.shift(5))).astype(float)
-
-        # Funding rate proxy (basis from price momentum)
-        df['funding_rate'] = log_ret.rolling(480).mean() * 100
-        df['funding_extreme'] = (df['funding_rate'].abs() > df['funding_rate'].abs().rolling(200).quantile(0.9)).astype(float)
-        df['funding_negative'] = (df['funding_rate'] < -0.001).astype(float)
-
-        # OI proxy (volume acceleration)
-        df['oi_change'] = df['volume'].pct_change(12).fillna(0)
-        df['oi_rising'] = (df['oi_change'] > 0).astype(float)
-
         df['returns_horizon']=df['close'].pct_change(horizon).shift(-horizon)
         return df.replace([np.inf,-np.inf],np.nan)
 
@@ -1672,7 +1649,7 @@ class AISupervisor:
         out *= cross_scalars
 
         # Budget
-        budget = self.portfolio.EXPOSURE_BUDGET.get(symbol, 0.35) if self.portfolio is not None else 0.35
+        budget = self.portfolio.EXPOSURE_BUDGET.get(symbol, 0.35)
         out    = np.clip(out, -budget, budget)
 
         self._call_count += len(sig)
@@ -1771,7 +1748,7 @@ def run_v21(csv_path: Optional[str] = None,
     FeatureLineageDAG.audit(FEATURE_COLS, list(df_feat.columns))
 
     # ── 3. Labels (Conservative ATR barriers) ────────────────────────────
-    labeler = LabelEngine(pt_atr=3.0, sl_atr=1.5, horizon=60, ambiguity_mode="optimistic")
+    labeler = LabelEngine(pt_atr=3.0, sl_atr=1.5, horizon=24, ambiguity_mode="pessimistic")
     exec_gate = ExecutionAlphaGate(min_edge_bps=50, min_depth_proxy=0.5, max_vol_regime=0.70, block_toxic_flow=True, block_sweeps=True)
     logger.info("[L2] Triple Barrier Labels [pt=3x, sl=1.5x, h=24]...")
     events  = labeler.generate_labels(df_feat)
@@ -1938,11 +1915,25 @@ def run_v21(csv_path: Optional[str] = None,
 
     # ── 6. L4 Execution Fortress ──────────────────────────────────────────
     logger.info("[L4] Execution Fortress...")
-    # Regime filter - sirf TRENDING + HIGH_VOLATILITY mein trade
-    trending_mask = (regimes.values == MarketRegime.TRENDING) | (regimes.values == MarketRegime.HIGH_VOLATILITY)
-    sig_raw = sig_raw * trending_mask.astype(float)
-
     sig_gated, gate_stats = exec_gate.filter_signals(sig_raw, ensemble_prob, df_feat)
+
+    # 20142014 META-LABEL FILTER (L4.5) 20142014
+    try:
+        from meta_filter import build_meta_filter
+        _meta_mask, _meta_idx = build_meta_filter(df_feat.copy())
+        _mask_aligned = np.ones(len(sig_gated), dtype=int)
+        _mask_aligned[:len(_meta_mask)] = _meta_mask[:len(sig_gated)]
+        sig_gated = sig_gated * _mask_aligned
+        logger.info(f"[META] Filter applied. Active signals: {(sig_gated!=0).sum()}")
+    except Exception as e:
+        logger.warning(f"[META] Filter skipped: {e}")
+
+    # Cross-exchange consensus (simulated)
+    sig_consensus = CrossExchangeConsensus.simulate_consensus(sig_gated, n_exchanges=4)
+
+    # ── 7. L5 Portfolio Intelligence ──────────────────────────────────────
+    pi         = PortfolioIntelligence(base_kelly=0.25, vol_target=0.15)
+    sig_vaps   = pi.vaps(sig_consensus, df_feat['ewma_vol'].values, horizon=24)
 
     # ── 8. L10 AI Supervisor (vectorized) ────────────────────────────────
     logger.info("[L10] AI Supervisor...")
@@ -1954,11 +1945,11 @@ def run_v21(csv_path: Optional[str] = None,
         vps_guardian=guardian,
         risk_fortress=risk_fortress,
         exec_gate=exec_gate,
-        portfolio_intel=None,
-        min_confidence=0.35,
+        portfolio_intel=pi,
+        min_confidence=0.51,
     )
     sig_supervised = supervisor.vectorized_approve(
-        signals=sig_raw,
+        signals=sig_vaps,
         probabilities=ensemble_prob,
         df=df_feat,
         regimes=regimes,
@@ -2156,7 +2147,7 @@ def run_v21(csv_path: Optional[str] = None,
         ("Fill Rate 70-90%",             0.70 <= exec_out['fill_rate'] <= 0.90),
         ("Slippage < 10 bps",            exec_out['avg_slippage_bps'] < 10),
         ("PBO < 20%",                    pbo_sup['pbo'] < 0.20),
-        ("Drift < 20 features",           drift_res['drifted_count'] < 20),
+        ("Drift < 8 features",           drift_res['drifted_count'] < 8),
         ("Gate > 20% filtered",          gate_stats['filter_pct'] > 20),
         ("No Circuit Halt",              not risk_out['halted']),
         ("HAC SR Supervised > 0",        lo_gated > 0),
