@@ -1,9 +1,0 @@
-Total: 7095
-Buy: 3521
-Sell: 3574
-Win: 6008 (84.7%)
-Loss: 1066 (15.0%)
-Total PnL: 79513.6 bps
-Avg/trade: 11.21 bps
-Best: 295.73 bps
-Worst: -106.05 bps
