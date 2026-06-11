@@ -719,7 +719,9 @@ class ExecutionSimulator:
         pos_qty  = pos_usd / (prices + 1e-9)
         part     = np.clip(pos_qty / (volumes + 1e-9), 0, 1)
         rng      = RNG.gen("fill")
-        fills    = (rng.random(n) < np.maximum(0, 1 - part)).astype(float)
+        # Limit order fill simulation: 70-85% fill rate target
+        fill_prob = np.clip(0.75 + 0.10 * (1 - part) - 0.05 * (ewma_vol / (np.nanpercentile(ewma_vol, 75) + 1e-9)), 0.65, 0.88)
+        fills    = (rng.random(n) < fill_prob).astype(float)
         slip     = self.taker + 0.5 * self.taker * part + 2.0 * self.taker * part**2
         vol_q75  = np.nanpercentile(ewma_vol, 75)
         slip    *= np.where(ewma_vol > vol_q75, 2.0, 1.0)
