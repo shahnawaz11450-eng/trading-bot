@@ -1,0 +1,137 @@
+nohup: ignoring input
+2026-06-11 16:05:31,634 [INFO] AL-FATH-v21 — ========================================================================
+2026-06-11 16:05:31,634 [INFO] AL-FATH-v21 — AL-FATH v21.0 — FULL INSTITUTIONAL PLATFORM
+2026-06-11 16:05:31,634 [INFO] AL-FATH-v21 — ========================================================================
+2026-06-11 16:05:31,635 [INFO] AL-FATH-v21 — [Init] Vault + VPS Guardian ready.
+2026-06-11 16:05:31,635 [INFO] AL-FATH-v21 — [Vault] Key stored for demo_user:binance (trade_only)
+2026-06-11 16:05:31,635 [INFO] AL-FATH-v21 — [Data] Loading CSV: btc_5m_real.csv
+2026-06-11 16:05:31,656 [INFO] AL-FATH-v21 — [DataAudit] Running integrity audit...
+2026-06-11 16:05:31,668 [INFO] AL-FATH-v21 — [DataAudit] Missing bars: 0.00%
+2026-06-11 16:05:31,668 [INFO] AL-FATH-v21 — [L1] Market Intelligence...
+2026-06-11 16:05:36,377 [INFO] AL-FATH-v21 — [LineageDAG] Auditing feature lineage...
+2026-06-11 16:05:36,377 [INFO] AL-FATH-v21 — [LineageDAG] 26 features verified.
+2026-06-11 16:05:36,377 [INFO] AL-FATH-v21 — [L2] Triple Barrier Labels [pt=3x, sl=1.5x, h=24]...
+2026-06-11 16:05:36,805 [INFO] AL-FATH-v21 — [Labels] Distribution: {-1: 32396, 1: 16354, 0: 1250}
+2026-06-11 16:05:36,805 [INFO] AL-FATH-v21 — [CPCV] N=4, k=1, combos=4, paths=1
+2026-06-11 16:05:36,805 [INFO] AL-FATH-v21 — [CPCV] Evaluating...
+2026-06-11 16:05:36,809 [INFO] AL-FATH-v21 — [CPCV] X=(50000, 26) y_dist={-1: np.int64(32396), 1: np.int64(16354), 0: np.int64(1250)}
+2026-06-11 16:05:36,814 [INFO] AL-FATH-v21 — [CPCV] p0 train=37500 classes=[np.int64(-1), np.int64(0), np.int64(1)]
+2026-06-11 16:05:36,815 [INFO] AL-FATH-v21 — [CPCV] p0 after ok filter: 37500 rows, classes=[np.int64(-1), np.int64(0), np.int64(1)]
+2026-06-11 16:05:36,815 [INFO] AL-FATH-v21 — [CPCV] path 0 training X=(37500, 26)
+2026-06-11 16:05:39,338 [INFO] AL-FATH-v21 — [CPCV] p1 train=37500 classes=[np.int64(-1), np.int64(0), np.int64(1)]
+2026-06-11 16:05:39,338 [INFO] AL-FATH-v21 — [CPCV] p1 after ok filter: 37500 rows, classes=[np.int64(-1), np.int64(0), np.int64(1)]
+2026-06-11 16:05:39,339 [INFO] AL-FATH-v21 — [CPCV] path 1 training X=(37500, 26)
+2026-06-11 16:05:42,368 [INFO] AL-FATH-v21 — [CPCV] p2 train=37500 classes=[np.int64(-1), np.int64(0), np.int64(1)]
+2026-06-11 16:05:42,369 [INFO] AL-FATH-v21 — [CPCV] p2 after ok filter: 37500 rows, classes=[np.int64(-1), np.int64(0), np.int64(1)]
+2026-06-11 16:05:42,369 [INFO] AL-FATH-v21 — [CPCV] path 2 training X=(37500, 26)
+2026-06-11 16:05:44,847 [INFO] AL-FATH-v21 — [CPCV] p3 train=37500 classes=[np.int64(-1), np.int64(0), np.int64(1)]
+2026-06-11 16:05:44,847 [INFO] AL-FATH-v21 — [CPCV] p3 after ok filter: 37500 rows, classes=[np.int64(-1), np.int64(0), np.int64(1)]
+2026-06-11 16:05:44,848 [INFO] AL-FATH-v21 — [CPCV] path 3 training X=(37500, 26)
+2026-06-11 16:05:47,220 [INFO] AL-FATH-v21 — [META-VI] Filter applied. Kept:50.8%
+2026-06-11 16:05:47,413 [INFO] AL-FATH-v21 — [META-VI] Filter applied. Kept:65.3%
+2026-06-11 16:05:47,413 [INFO] AL-FATH-v21 — [L2] Confidence Decay + Concept Drift...
+2026-06-11 16:05:47,720 [WARNING] AL-FATH-v21 — [DriftMonitor] rsi_14: PSI=0.007 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,728 [WARNING] AL-FATH-v21 — [DriftMonitor] macd_hist: PSI=0.039 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,737 [WARNING] AL-FATH-v21 — [DriftMonitor] bb_pct: PSI=0.005 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,739 [WARNING] AL-FATH-v21 — [DriftMonitor] atr_pct: PSI=0.646 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,751 [WARNING] AL-FATH-v21 — [DriftMonitor] vwap_dist: PSI=9.872 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,760 [WARNING] AL-FATH-v21 — [DriftMonitor] stoch_k: PSI=0.004 KS_p=0.0004 ALERT
+2026-06-11 16:05:47,769 [WARNING] AL-FATH-v21 — [DriftMonitor] stoch_d: PSI=0.005 KS_p=0.0012 ALERT
+2026-06-11 16:05:47,787 [WARNING] AL-FATH-v21 — [DriftMonitor] williams_r: PSI=0.004 KS_p=0.0004 ALERT
+2026-06-11 16:05:47,796 [WARNING] AL-FATH-v21 — [DriftMonitor] cci_20: PSI=0.004 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,803 [WARNING] AL-FATH-v21 — [DriftMonitor] momentum_10: PSI=0.120 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,812 [WARNING] AL-FATH-v21 — [DriftMonitor] vol_momentum: PSI=0.015 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,815 [WARNING] AL-FATH-v21 — [DriftMonitor] hl_range: PSI=0.348 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,822 [WARNING] AL-FATH-v21 — [DriftMonitor] close_position: PSI=0.071 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,829 [WARNING] AL-FATH-v21 — [DriftMonitor] funding_rate: PSI=0.488 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,837 [WARNING] AL-FATH-v21 — [DriftMonitor] funding_negative: PSI=0.041 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,846 [WARNING] AL-FATH-v21 — [DriftMonitor] oi_change: PSI=0.013 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,850 [WARNING] AL-FATH-v21 — [DriftMonitor] rvol: PSI=0.432 KS_p=0.0000 ALERT
+2026-06-11 16:05:47,858 [INFO] AL-FATH-v21 — [L4] Execution Fortress...
+2026-06-11 16:05:47,864 [INFO] AL-FATH-v21 — [ExecGate] 35957 → 21635 signals (39.8% filtered)
+2026-06-11 16:05:47,864 [INFO] AL-FATH-v21 — [L10] AI Supervisor...
+2026-06-11 16:05:47,865 [INFO] AL-FATH-v21 — [Supervisor] Vectorized block rate: 57.6%
+2026-06-11 16:05:47,865 [INFO] AL-FATH-v21 — [L3] Risk Fortress sizing...
+2026-06-11 16:05:47,866 [INFO] AL-FATH-v21 — [L4] Strict Execution Simulation...
+2026-06-11 16:05:47,869 [INFO] AL-FATH-v21 — [Stats] White RC + HAC-SPA + PBO + DSR...
+
+========================================================================
+  AL-FATH v21.0 — FULL INSTITUTIONAL AUDIT REPORT
+========================================================================
+
+  ── ALPHA vs EXECUTION DECOMPOSITION ──────────────────────
+  Net EV (Raw, no supervisor):      -1951.64%
+  Net EV (Supervised + micro):      -1615.50%  Gate benefit: +336.14%
+  Net EV (Supervisor + ExecSim):     -955.06%  Exec drag:    -660.44%
+  DIAGNOSIS: ExecSim IMPROVED over micro — low slippage regime
+
+  ── L10 AI SUPERVISOR ─────────────────────────────────────
+  Total Calls:                         50000
+  Blocked:                             28785  (57.6%)
+  Approved:                            21215
+
+  ── L4 EXECUTION GATE ─────────────────────────────────────
+  Signals Before Gate:                 35957
+  Signals After Gate:                  21635
+  Filtered:                             39.8%
+  Edge Threshold:                       50.0 bps
+
+  ── STATISTICAL GOVERNANCE (RAW) ──────────────────────────
+  White RC p-value (Raw):             0.6415  → No Confirmed Alpha
+  HAC-SPA p-value (Raw):              1.0000  → No Edge
+  PBO (Raw):                           54.96%
+
+  ── STATISTICAL GOVERNANCE (SUPERVISED) ──────────────────
+  White RC p-value (Supervised):      0.5060  → No Confirmed Alpha
+  HAC-SPA p-value (Supervised):       1.0000  → No Edge
+  PBO (Supervised):                    19.62%
+  True DSR:                           0.0000   [Target: >0.95]
+
+  ── HAC SHARPE ────────────────────────────────────────────
+  Lo HAC SR (Raw):                   -3.2024
+  Lo HAC SR (Supervised):           -13.2117
+  Lo HAC SR (ExecSim):              -33.9412
+
+  ── L4 EXECUTION (STRICT) ─────────────────────────────────
+  Fill Rate:                           81.01%  [Target: 70-90%]
+  Avg Slippage:                         6.29 bps [Target: <3]
+  Trade Count:                         17189
+  Circuit Halted:                         No
+
+  ── L3 RISK FORTRESS ──────────────────────────────────────
+  Max Drawdown:                         0.00%
+  Survival Bars:                           0
+
+  ── L2 CONCEPT DRIFT (80/20) ──────────────────────────────
+  Drifted Features:                       17 / 26
+  Retrain Needed:                        YES
+
+  ── L1 MARKET INTELLIGENCE ────────────────────────────────
+  Regime TRENDING                         45145 bars
+  Regime NEUTRAL                           2096 bars
+  Regime HIGH_VOLATILITY                   1508 bars
+  Regime LOW_LIQUIDITY                     1061 bars
+  Regime MEAN_REVERTING                     190 bars
+
+  ── N_EFF ─────────────────────────────────────────────────
+  N_eff Corr:                           4.00
+  N_eff Trade:                          4.00
+  N_eff Conservative:                   4.00
+
+========================================================================
+  ❌ Net EV Exec > 0
+  ✅ Fill Rate 70-90%
+  ✅ Slippage < 10 bps
+  ✅ PBO < 20%
+  ✅ Drift < 20 features
+  ✅ Gate > 20% filtered
+  ✅ No Circuit Halt
+  ❌ HAC SR Supervised > 0
+  ✅ Supervisor Block Rate < 80%
+  ✅ N_eff > 1
+
+  [8/10] RATING: Production-Ready Research Platform
+
+  NOTE: White RC & SPA will only pass with REAL predictive alpha.
+  Load real BTC/USDT CSV: python al_fath_v21.py --csv btc_1m.csv
+========================================================================

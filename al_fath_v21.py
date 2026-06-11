@@ -728,8 +728,22 @@ class ExecutionSimulator:
         changes  = np.abs(np.diff(sig_exec, prepend=0)) > 0
         raw_ret  = np.diff(np.log(prices + 1e-9), prepend=0) * sig_exec
         exec_ret = raw_ret - slip * changes * fills - slip * 0.3 * changes * (1 - fills)
+        # Trade log
+        trade_idx = np.where(changes)[0]
+        trade_log = []
+        for i in trade_idx:
+            if fills[i] > 0.5:
+                trade_log.append({
+                    "bar": i,
+                    "direction": "BUY" if sig_exec[i] > 0 else "SELL",
+                    "price": float(prices[i]),
+                    "pnl_bps": float(exec_ret[i] * 10000),
+                    "filled": bool(fills[i] > 0.5),
+                })
+
         return {
             "exec_returns":        exec_ret,
+            "trade_log":           trade_log,
             "fill_rate":           float(np.mean(fills[changes]) if changes.sum() > 0 else 1.0),
             "avg_slippage_bps":    float(np.mean(slip[changes]) * 10000 if changes.sum() > 0 else 0),
             "avg_participation":   float(np.mean(part[changes]) if changes.sum() > 0 else 0),
