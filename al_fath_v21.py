@@ -1817,11 +1817,8 @@ def run_v21(csv_path: Optional[str] = None,
         _df['trend_score']=_df['above_ma'].rolling(20).mean()
         _df['atr_pct']=(_df['high']-_df['low']).ewm(span=14,adjust=False).mean()/(_df['close']+_eps)
         _dff=pd.read_csv('btc_funding.csv')
-        def _pfr(r):
-            try: return float(ast.literal_eval(r['info']).get('fundingRate',0))
-            except: return 0.0
-        _dff['fr']=_dff.apply(_pfr,axis=1)
-        _dff['dt']=pd.to_datetime(_dff['datetime'],utc=True).dt.tz_localize(None)
+        _dff['fr']=_dff['funding_rate'].astype(float)
+        _dff['dt']=pd.to_datetime(_dff['timestamp'],utc=True).dt.tz_localize(None)
         _dff=_dff.set_index('dt')[['fr']].sort_index()
         _df=_df.merge(_dff,left_index=True,right_index=True,how='left')
         _df['fr']=_df['fr'].ffill().fillna(0)
@@ -1886,11 +1883,8 @@ def run_v21(csv_path: Optional[str] = None,
         _df['trend_score']=_df['above_ma'].rolling(20).mean()
         _df['atr_pct']=(_df['high']-_df['low']).ewm(span=14,adjust=False).mean()/(_df['close']+_eps)
         _dff=pd.read_csv('btc_funding.csv')
-        def _pfr(r):
-            try: return float(ast.literal_eval(r['info']).get('fundingRate',0))
-            except: return 0.0
-        _dff['fr']=_dff.apply(_pfr,axis=1)
-        _dff['dt']=pd.to_datetime(_dff['datetime'],utc=True).dt.tz_localize(None)
+        _dff['fr']=_dff['funding_rate'].astype(float)
+        _dff['dt']=pd.to_datetime(_dff['timestamp'],utc=True).dt.tz_localize(None)
         _dff=_dff.set_index('dt')[['fr']].sort_index()
         _df=_df.merge(_dff,left_index=True,right_index=True,how='left')
         _df['fr']=_df['fr'].ffill().fillna(0)
