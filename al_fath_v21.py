@@ -296,9 +296,11 @@ class MarketRegime:
 
         regime = pd.Series(MarketRegime.NEUTRAL, index=df.index)
         regime[ewma_vol > vol_q75]          = MarketRegime.HIGH_VOLATILITY
-        regime[hurst_proxy > 1.2]           = MarketRegime.TRENDING
-        regime[(hurst_proxy < 0.8) &
-               (regime == MarketRegime.NEUTRAL)] = MarketRegime.MEAN_REVERTING
+        regime[hurst_proxy > 1.5]           = MarketRegime.TRENDING
+        regime[(hurst_proxy >= 0.9) &
+               (hurst_proxy <= 1.5)]        = MarketRegime.NEUTRAL
+        regime[(hurst_proxy < 0.9) &
+               (regime != MarketRegime.HIGH_VOLATILITY)] = MarketRegime.MEAN_REVERTING
         regime[vol < vol_med * 0.3]         = MarketRegime.LOW_LIQUIDITY
         return regime
 
@@ -727,7 +729,30 @@ class ExecutionSimulator:
         slip    *= np.where(ewma_vol > vol_q75, 2.0, 1.0)
         changes  = np.abs(np.diff(sig_exec, prepend=0)) > 0
         raw_ret  = np.diff(np.log(prices + 1e-9), prepend=0) * sig_exec
-        exec_ret = raw_ret - slip * changes * fills - slip * 0.3 * changes * (1 - fills)
+
+        # TRAILING STOP (2x ATR)
+        atr = np.maximum(ewma_vol * prices, 1e-9)
+        trail_pnl = np.zeros(n)
+        pos = 0.0
+        entry_px = 0.0
+        peak_px = 0.0
+        for i in range(n):
+            if sig_exec[i] != 0 and pos == 0.0:
+                pos = sig_exec[i]
+                entry_px = prices[i]
+                peak_px = prices[i]
+            elif pos != 0.0:
+                if pos > 0:
+                    peak_px = max(peak_px, prices[i])
+                    if prices[i] < peak_px - 2.0 * atr[i]:
+                        trail_pnl[i] = np.log((prices[i]+1e-9)/(entry_px+1e-9)) * 0.1
+                        pos = 0.0
+                else:
+                    peak_px = min(peak_px, prices[i])
+                    if prices[i] > peak_px + 2.0 * atr[i]:
+                        trail_pnl[i] = -np.log((prices[i]+1e-9)/(entry_px+1e-9)) * 0.1
+                        pos = 0.0
+        exec_ret = raw_ret - slip * changes * fills - slip * 0.3 * changes * (1 - fills) + trail_pnl
         # Trade log
         trade_idx = np.where(changes)[0]
         trade_log = []
@@ -743,6 +768,7 @@ class ExecutionSimulator:
 
         return {
             "exec_returns":        exec_ret,
+            "sig_exec":            sig_exec,
             "trade_log":           trade_log,
             "fill_rate":           float(np.mean(fills[changes]) if changes.sum() > 0 else 1.0),
             "avg_slippage_bps":    float(np.mean(slip[changes]) * 10000 if changes.sum() > 0 else 0),
@@ -1270,11 +1296,15 @@ class WhiteRealityCheck:
         if np.all(np.isnan(means)) or K==0:
             return {"RC_P_Value":1.0,"Status":"No Confirmed Alpha"}
         V=np.max(np.sqrt(T)*means); bk=self._bk(perf[:,np.argmax(means)])
-        pc=np.nan_to_num(perf,nan=0.0); rng=RNG.gen("wrc"); boot=np.zeros(self.n_boot)
+        rng=RNG.gen("wrc"); boot=np.zeros(self.n_boot)
         for b in range(self.n_boot):
             sp=rng.integers(0,T,size=(T//bk)+1)
             ix=np.concatenate([np.arange(s,s+bk)%T for s in sp])[:T]
-            boot[b]=np.max(np.sqrt(T)*np.mean(pc[ix,:],axis=0))
+            sample=perf[ix,:]
+            with np.errstate(invalid="ignore"):
+                bm=np.nanmean(sample,axis=0)
+            bm=np.nan_to_num(bm,nan=-np.inf)
+            boot[b]=np.max(np.sqrt(T)*bm)
         pv=np.mean(boot>=V)
         return {"RC_P_Value":pv,"Status":"Alpha Confirmed" if pv<0.05 else "No Confirmed Alpha"}
 
@@ -1300,11 +1330,15 @@ class HansenHACSpA:
         if T_spa<=0 or np.isnan(T_spa): return {"SPA_P_Value":1.0,"Status":"No Edge"}
         bk=self._bk(f[:,np.argmax(means/omega)])
         gc=np.where(means>=-np.sqrt(np.log(np.log(T))/T)*omega,means,0.0)
-        rf=np.nan_to_num(f-gc,nan=0.0); rng=RNG.gen("spa"); boot=np.zeros(self.n_boot)
+        rf=f-gc; rng=RNG.gen("spa"); boot=np.zeros(self.n_boot)
         for b in range(self.n_boot):
             sp=rng.integers(0,T,size=(T//bk)+1)
             ix=np.concatenate([np.arange(s,s+bk)%T for s in sp])[:T]
-            boot[b]=np.max(np.sqrt(T)*np.mean(rf[ix,:],axis=0)/omega)
+            sample=rf[ix,:]
+            with np.errstate(invalid="ignore"):
+                bm=np.nanmean(sample,axis=0)
+            bm=np.nan_to_num(bm,nan=-np.inf)
+            boot[b]=np.max(np.sqrt(T)*bm/omega)
         pv=np.mean(boot>=T_spa)
         return {"SPA_P_Value":pv,"Status":"Robust Alpha" if pv<0.05 else "Data Mined"}
 
@@ -1423,6 +1457,51 @@ class DSR:
         return float(stats.norm.cdf((sr-emsr)*np.sqrt(len(r)-1)/np.sqrt(den)))
 
 
+def reconstruct_trades(sig_exec, prices, exec_ret, regime):
+    n = len(sig_exec)
+    sign = np.sign(sig_exec)
+    trades = []
+    pos_sign = 0.0
+    entry_bar = None
+    for i in range(n):
+        cur_sign = sign[i]
+        if cur_sign != pos_sign:
+            if pos_sign != 0.0 and entry_bar is not None:
+                ep_idx = max(entry_bar - 1, 0)
+                xp_idx = max(i - 1, 0)
+                trades.append({
+                    "entry_bar": entry_bar,
+                    "exit_bar": i,
+                    "direction": "LONG" if pos_sign > 0 else "SHORT",
+                    "entry_price_theoretical": float(prices[ep_idx]),
+                    "exit_price_theoretical":  float(prices[xp_idx]),
+                    "holding_period": i - entry_bar,
+                    "gross_return": float(pos_sign * (np.log(prices[xp_idx]+1e-9) - np.log(prices[ep_idx]+1e-9))),
+                    "net_return": float(np.sum(exec_ret[entry_bar:i])),
+                    "avg_exposure": float(np.mean(np.abs(sig_exec[entry_bar:i]))),
+                    "regime": regime[entry_bar],
+                    "status": "CLOSED",
+                })
+            entry_bar = i if cur_sign != 0.0 else None
+            pos_sign = cur_sign
+    if pos_sign != 0.0 and entry_bar is not None:
+        ep_idx = max(entry_bar - 1, 0)
+        xp_idx = n - 1
+        trades.append({
+            "entry_bar": entry_bar, "exit_bar": n-1,
+            "direction": "LONG" if pos_sign > 0 else "SHORT",
+            "entry_price_theoretical": float(prices[ep_idx]),
+            "exit_price_theoretical":  float(prices[xp_idx]),
+            "holding_period": (n-1) - entry_bar,
+            "gross_return": float(pos_sign * (np.log(prices[xp_idx]+1e-9) - np.log(prices[ep_idx]+1e-9))),
+            "net_return": float(np.sum(exec_ret[entry_bar:n])),
+            "avg_exposure": float(np.mean(np.abs(sig_exec[entry_bar:n]))),
+            "regime": regime[entry_bar],
+            "status": "OPEN_AT_END",
+        })
+    return pd.DataFrame(trades)
+
+
 class TrueCPCV:
     def __init__(self, N=6, k=2, horizon=24):
         self.N=N; self.k=k; self.horizon=horizon
@@ -1439,6 +1518,7 @@ class TrueCPCV:
 
     def evaluate(self, df, events, w):
         logger.info("[CPCV] Evaluating...")
+        logger.info(f"[CPCV] t1 range: {events['t1'].min()} -> {events['t1'].max()}")
         ts=np.arange(len(df)); gs=len(ts)//self.N
         bounds=[(ts[i*gs],ts[min((i+1)*gs-1,len(ts)-1)]) for i in range(self.N)]
         avail=[c for c in FEATURE_COLS if c in df.columns]
@@ -1455,7 +1535,15 @@ class TrueCPCV:
             for tg in test_groups:
                 s,e=bounds[tg]
                 test_idx.update(range(s,min(len(df),e+1)))
-            train_idx=[i for i in range(len(df)) if i not in test_idx]
+            t1_arr = events['t1'].values.astype(int)
+            test_start, test_end = min(test_idx), max(test_idx)
+            train_idx = [
+                i for i in range(len(df))
+                if i not in test_idx
+                and not (i <= test_end and t1_arr[i] >= test_start)
+            ]
+            purged = len(df) - len(test_idx) - len(train_idx)
+            logger.info(f"[CPCV] p{p_idx} test={len(test_idx)} purged={purged} train={len(train_idx)}")
             Xtr=X.iloc[train_idx]; ytr=y.iloc[train_idx]; wtr=w.iloc[train_idx]
             logger.info(f"[CPCV] p{p_idx} train={len(Xtr)} classes={list(np.unique(ytr))}")
             import logging; logging.getLogger("AL-FATH-v21").info(f"[CPCV] p{p_idx} after ok filter: {len(Xtr)} rows, classes={list(np.unique(ytr))}")
@@ -1469,10 +1557,21 @@ class TrueCPCV:
             try: li=np.where(model.classes_==1)[0][0]
             except: li=0
             cal=OOFCalibrator(k=3).fit(Xtr,ytr,wtr,params)
+            # XGBoost ensemble
+            xgb_model = XGBoostSignal()
+            ytr_bin = (ytr == 1).astype(int)
+            xgb_ok = False
+            if len(set(ytr_bin)) >= 2:
+                xgb_model.train(Xtr.fillna(0), ytr, sample_weight=wtr.values)
+                xgb_ok = xgb_model.trained
             for tg in test_groups:
                 s,e=bounds[tg]; mask=(ts>=s)&(ts<=e)
                 rp=model.predict_proba(X.iloc[mask].fillna(0))[:,li]
-                cp=cal.cal(rp); meta_p[mask,p_idx]=cp
+                cp=cal.cal(rp)
+                if xgb_ok:
+                    xgb_p = xgb_model.predict_proba(X.iloc[mask].fillna(0))
+                    cp = (cp + xgb_p) / 2.0
+                meta_p[mask,p_idx]=cp
                 sg=np.where(cp>0.5,1.0,-1.0)
                 meta_s[mask,p_idx]=sg; meta_r[mask,p_idx]=r.values[mask]*sg
         ep=np.nanmean(meta_p,axis=1)
@@ -1798,7 +1897,38 @@ def run_v21(csv_path: Optional[str] = None,
     # ── 4. CPCV Evaluation ───────────────────────────────────────────────
     cpcv = TrueCPCV(N=4, k=1, horizon=1)
     meta_p, meta_r, meta_s, sig_raw = cpcv.evaluate(df_feat, events, w)
+
+    # ── IC Diagnostic (Patch 4) ──────────────────────────────────────────
+    import scipy.stats as scipy_stats
+    _raw_sig_pre_minhold = sig_raw.copy()
+    _fwd_ret = df_feat['returns_horizon'].values
+    _mask = ~np.isnan(_raw_sig_pre_minhold) & ~np.isnan(_fwd_ret) & (_raw_sig_pre_minhold != 0)
+    if _mask.sum() > 30:
+        ic_value, ic_pvalue = scipy_stats.spearmanr(_raw_sig_pre_minhold[_mask], _fwd_ret[_mask])
+        logger.info(f"[IC-Diag] Global IC (Spearman) on non-zero sig_raw: {ic_value:.4f} (p={ic_pvalue:.4f}), n={_mask.sum()}")
+    else:
+        logger.info(f"[IC-Diag] Insufficient non-zero signals: n={_mask.sum()}")
     ensemble_prob = np.nanmean(meta_p, axis=1)
+
+    # ── MIN HOLD FILTER: har 12 bars ke baad hi naya trade ──
+    MIN_HOLD = 24
+    filtered_sig = np.zeros_like(sig_raw)
+    last_trade = -MIN_HOLD
+    for i in range(len(sig_raw)):
+        if sig_raw[i] != 0 and (i - last_trade) >= MIN_HOLD:
+            filtered_sig[i] = sig_raw[i]
+            last_trade = i
+    sig_raw = filtered_sig
+
+    # REGIME-SPECIFIC SIGNAL ADJUSTMENT
+    for i in range(len(sig_raw)):
+        r = regimes.iloc[i] if hasattr(regimes, 'iloc') else regimes[i]
+        if r == MarketRegime.MEAN_REVERTING:
+            sig_raw[i] = -sig_raw[i]  # reverse signal for mean reversion
+        elif r == MarketRegime.HIGH_VOLATILITY:
+            sig_raw[i] = sig_raw[i] * 0.5  # half size in high vol
+        elif r == MarketRegime.LOW_LIQUIDITY:
+            sig_raw[i] = 0.0  # no trade in low liquidity
 
     # —— L4.5 VI+FUNDING META FILTER ——————————————————
     try:
@@ -1993,6 +2123,30 @@ def run_v21(csv_path: Optional[str] = None,
         df_feat['volume'].values, df_feat['ewma_vol'].values
     )
 
+    # ── Trade Reconstruction (Patch 3) ──────────────────────────────────
+    uniq_pos = np.unique(exec_out['sig_exec'])
+    logger.info(f"[TradeRecon] unique_position_count={len(uniq_pos)} sample={uniq_pos[:20]}")
+
+    trade_df = reconstruct_trades(
+        sig_exec=exec_out['sig_exec'],
+        prices=df_feat['close'].values,
+        exec_ret=exec_out['exec_returns'],
+        regime=df_feat['regime'].values
+    )
+    logger.info(f"[TradeRecon] reconstructed_trades={len(trade_df)} vs reported_trade_count={exec_out['trade_count']}")
+    if len(trade_df) > 0:
+        closed = trade_df[trade_df['status'] == 'CLOSED']
+        logger.info(f"[TradeRecon] closed_trades={len(closed)} open_at_end={len(trade_df)-len(closed)}")
+        logger.info(f"[TradeRecon] regime_counts:\n{trade_df['regime'].value_counts(dropna=False)}")
+        if len(closed) > 0:
+            logger.info(f"[TradeRecon] by direction:\n{closed.groupby('direction')['net_return'].agg(['count','mean','sum'])}")
+            logger.info(f"[TradeRecon] holding_period stats: mean={closed['holding_period'].mean():.2f} median={closed['holding_period'].median():.2f}")
+            win_rate = (closed['net_return'] > 0).mean()
+            logger.info(f"[TradeRecon] win_rate={win_rate:.4f}")
+            logger.info(f"[TradeRecon] avg_exposure stats: mean={closed['avg_exposure'].mean():.4f}")
+        trade_df.to_csv('trade_log_reconstructed.csv', index=False)
+        logger.info("[TradeRecon] saved to trade_log_reconstructed.csv")
+
     # ── 11. Returns at each layer ─────────────────────────────────────────
     micro = Micro()
     gross_raw    = df_feat['returns_horizon'].values * np.nan_to_num(sig_raw, nan=0.0)
@@ -2082,9 +2236,12 @@ def run_v21(csv_path: Optional[str] = None,
         print("  ⚠️  SYNTHETIC DATA: RC/SPA valid as governance checks only.")
 
     print(f"\n  ── ALPHA vs EXECUTION DECOMPOSITION ──────────────────────")
-    print(f"  Net EV (Raw, no supervisor):    {alpha_ev:>10.2f}%")
-    print(f"  Net EV (Supervised + micro):    {gate_ev:>10.2f}%  Gate benefit: {gate_benefit:+.2f}%")
-    print(f"  Net EV (Supervisor + ExecSim):  {exec_ev:>10.2f}%  Exec drag:    {exec_drag:+.2f}%")
+    print(f"  Forward-Horizon Alpha Score (Raw, non-tradeable):  {alpha_ev:>10.2f}%")
+    print(f"  Gated Alpha Score (Supervised + micro):             {gate_ev:>10.2f}%  Gate effect: {gate_benefit:+.2f}%")
+    print(f"  Execution-Simulated PnL (Supervisor + ExecSim):     {exec_ev:>10.2f}%  Exec drag:   {exec_drag:+.2f}%")
+    print(f"  NOTE: Forward-Horizon Alpha Score uses overlapping forward-return windows;")
+    print(f"        it is a predictive-signal score, NOT realized/tradeable PnL.")
+    print(f"        Only 'Execution-Simulated PnL' reflects tradeable performance.")
     if exec_ev > gate_ev:
         diag = "ExecSim IMPROVED over micro — low slippage regime"
     elif gate_ev > alpha_ev:
