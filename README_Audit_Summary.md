@@ -77,3 +77,23 @@ execution-layer processing.
    once underlying signal shows non-zero IC
 4. `Net EV (Raw)` relabeled to "Forward-Horizon Alpha Score" (Patch 4b) — cosmetic,
    prevents future misinterpretation
+
+## Addendum: Independent EMA-Crossover Signal Test (meta_label.py)
+
+A separate, simpler primary signal (EMA(10) vs EMA(30) crossover) was tested
+independently via `meta_label.py`, with a meta-labeling filter on top.
+
+Results:
+- Primary signal accuracy: 47.2% (sub-random, i.e. worse than a coin flip)
+- Meta-filter accuracy: 51.2% (statistically indistinguishable from random)
+- Trades kept after filter: 7.3% (very small, high-variance subset)
+- Reported Sharpe ratios (Raw: 2.851, Meta: -2.953) are inflated by aggressive
+  per-minute-to-annual scaling (`sqrt(525600)`) and should not be trusted at
+  face value — consistent with the overlapping-window inflation issue found
+  in the main `Net EV (Raw)` metric.
+
+Conclusion: this independent, simpler signal-generation approach reaches the
+same conclusion as the main CPCV-based pipeline — no demonstrable predictive
+edge in the current feature/signal design. `meta_filter.py` and `meta_label.py`
+are kept as reference/archive, not merged into the active `al_fath_v21.py`
+pipeline.

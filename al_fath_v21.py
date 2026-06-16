@@ -1837,6 +1837,43 @@ def load_csv(path: str) -> pd.DataFrame:
     return df
 
 
+def download_binance_csv(symbol: str = "BTCUSDT", interval: str = "1m",
+                          limit: int = 1000, max_batches: int = 50,
+                          out_path: str = "btc_1m.csv") -> str:
+    """
+    Download recent OHLCV data from Binance public REST API and save as a
+    load_csv()-compatible CSV. Integrated from download_btc.py.
+    Returns the output path on success.
+    """
+    import requests, csv, time
+    url = "https://api.binance.com/api/v3/klines"
+    params = {"symbol": symbol, "interval": interval, "limit": limit}
+    all_data = []
+    end_time = None
+
+    logger.info(f"[Download] Fetching {symbol} {interval} from Binance...")
+    for _ in range(max_batches):
+        if end_time:
+            params["endTime"] = end_time
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        if not data:
+            break
+        all_data = data + all_data
+        end_time = data[0][0] - 1
+        time.sleep(0.3)
+
+    with open(out_path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["timestamp", "open", "high", "low", "close", "volume"])
+        for d in all_data:
+            w.writerow([d[0], d[1], d[2], d[3], d[4], d[5]])
+
+    logger.info(f"[Download] Saved {len(all_data)} rows to {out_path}")
+    return out_path
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  MASTER RUN — AL-FATH v21.0
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2374,11 +2411,19 @@ def parse_args():
                    help="Run AI Supervisor check only (fast mode)")
     p.add_argument("--n-bars", type=int, default=20000,
                    help="Number of synthetic bars if no CSV (default: 20000)")
+    p.add_argument("--download", action="store_true",
+                   help="Download recent BTCUSDT 1m data from Binance before running")
+    p.add_argument("--symbol", default="BTCUSDT",
+                   help="Symbol to download (default: BTCUSDT)")
+    p.add_argument("--interval", default="1m",
+                   help="Kline interval to download (default: 1m)")
     return p.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
+    if args.download:
+        args.csv = download_binance_csv(symbol=args.symbol, interval=args.interval)
     run_v21(
         csv_path         = args.csv,
         saas_demo        = args.saas_demo,
