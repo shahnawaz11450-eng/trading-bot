@@ -97,3 +97,54 @@ same conclusion as the main CPCV-based pipeline — no demonstrable predictive
 edge in the current feature/signal design. `meta_filter.py` and `meta_label.py`
 are kept as reference/archive, not merged into the active `al_fath_v21.py`
 pipeline.
+
+## Phase 4: Label-Horizon Alignment Fix + Critical Data Bugs Found
+
+### Bug Fix 1: Label/Feature Horizon Mismatch
+- Issue: generate_features(horizon=24) produced returns_horizon on a 24-bar
+  window, while LabelEngine(horizon=60) trained the model on 60-bar triple-barrier
+  labels. The IC diagnostic was comparing the signal against the wrong horizon.
+- Fix: aligned generate_features(horizon=60) to match LabelEngine.
+
+### Bug Fix 2: Hardcoded Resample Frequency
+- Issue: DataIntegrityAuditor.audit_and_clean() had freq='5min' hardcoded in
+  pd.date_range(...), causing incorrect alignment when processing 1-minute
+  datasets. This affected earlier BTCUSDT audit runs and likely contributed to
+  the unexpected row-count reductions observed during testing.
+- Fix: frequency now inferred dynamically via pd.infer_freq() with fallback.
+
+### Bug Fix 3: download_binance_csv() Timestamp Bug
+- Issue: integrated download_binance_csv() wrote raw millisecond epoch integers
+  without conversion, misinterpreted as nanoseconds by pd.to_datetime(),
+  silently corrupting dates (collapsed to 1970-01-01).
+- Fix: timestamps converted to ISO datetime strings at download time.
+
+### Result After All Fixes (real BTCUSDT, n=19940 non-zero signal bars)
+
+| Metric | Before fixes | After fixes |
+|---|---|---|
+| IC (Spearman) | 0.0133 | 0.0252 |
+| IC p-value | 0.4018 | 0.0004 |
+| White RC (Supervised) | 0.7105 | 0.8100 |
+| HAC-SPA (Supervised) | 0.4845 | 0.4665 |
+| PBO (Supervised) | 51.07% | 76.99% |
+| Lo HAC SR (Supervised) | -3.28 | -8.30 |
+| Lo HAC SR (ExecSim) | -9.94 | -24.15 |
+
+### Interpretation
+The IC is now statistically significant (IC=0.0252, p=0.0004, n≈19,940
+non-zero signal bars) - a real, measurable directional relationship exists
+between sig_raw and 60-bar forward returns. This does NOT reverse the "no
+alpha" conclusion: with a sample this large, even a very small effect can
+reach significance, and the effect size here remains economically tiny.
+White RC, SPA, PBO, and HAC Sharpe all remain firmly in "no tradeable edge"
+territory, and in fact worsened slightly post-fix. The 1-bar holding period /
+transaction-cost structure documented earlier in this audit appears to fully
+consume this small statistical edge.
+
+**Revised conclusion:** Data-processing defects materially affected earlier
+diagnostics and have now been corrected. After re-evaluation on corrected
+data, the signal exhibits a statistically detectable relationship with future
+returns (IC≈0.025), but the effect remains economically insignificant and
+fails robustness tests (White RC, SPA, PBO, HAC Sharpe). The strategy
+therefore remains unsuitable for production deployment in its current form.

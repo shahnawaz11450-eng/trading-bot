@@ -993,7 +993,8 @@ class DataIntegrityAuditor:
         df = df.copy().drop_duplicates(subset=['timestamp'])
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df = df.set_index('timestamp').sort_index()
-        full = pd.date_range(df.index.min(), df.index.max(), freq='5min')
+        _inferred_freq = pd.infer_freq(df.index) or (df.index[1]-df.index[0])
+        full = pd.date_range(df.index.min(), df.index.max(), freq=_inferred_freq)
         df   = df.reindex(full)
         df['is_missing_bar'] = df['close'].isna().astype(float)
         df_r = df.copy()
@@ -1864,11 +1865,13 @@ def download_binance_csv(symbol: str = "BTCUSDT", interval: str = "1m",
         end_time = data[0][0] - 1
         time.sleep(0.3)
 
+    import datetime
     with open(out_path, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["timestamp", "open", "high", "low", "close", "volume"])
         for d in all_data:
-            w.writerow([d[0], d[1], d[2], d[3], d[4], d[5]])
+            ts_str = datetime.datetime.utcfromtimestamp(d[0] / 1000.0).strftime("%Y-%m-%d %H:%M:%S")
+            w.writerow([ts_str, d[1], d[2], d[3], d[4], d[5]])
 
     logger.info(f"[Download] Saved {len(all_data)} rows to {out_path}")
     return out_path
@@ -1906,7 +1909,7 @@ def run_v21(csv_path: Optional[str] = None,
 
     # ── 2. L1 Market Intelligence ─────────────────────────────────────────
     logger.info("[L1] Market Intelligence...")
-    df_feat   = CoreEngine().generate_features(df_r, df_e, horizon=24)
+    df_feat   = CoreEngine().generate_features(df_r, df_e, horizon=60)
     df_feat   = OrderBookProxy.compute(df_feat)
     df_feat   = InstitutionalFlowTracker.compute(df_feat)
     df_feat   = AdversarialDetectionEngine.compute(df_feat)
