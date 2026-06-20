@@ -52,7 +52,7 @@ footer{padding:10px 20px;border-top:1px solid #1a2d45;display:flex;justify-conte
 <div class="grid4">
   <div class="card"><div class="cl">TOTAL USERS</div><div class="cv cyan">{{ users|length }}</div><div class="cs">All accounts</div></div>
   <div class="card"><div class="cl">TOTAL AUM</div><div class="cv gold">${{ "{:,.0f}".format(total_aum) }}</div><div class="cs">Paper accounts</div></div>
-  <div class="card"><div class="cl">BOT RATING</div><div class="cv gold">8/10</div><div class="cs">Production-Ready</div></div>
+  <div class="card"><div class="cl">BOT RATING</div><div class="cv gold" id="topRating">--/10</div><div class="cs" id="topRatingLabel">Loading...</div></div>
   <div class="card"><div class="cl">BTC PRICE</div><div class="cv cyan" id="btcP">...</div><div class="cs" id="btcC">--</div></div>
 </div>
 
@@ -115,6 +115,8 @@ async function fetchBotStatus(){
     const d=await r.json();
     document.getElementById('botstatus').textContent = d.bot_status==='RUNNING' ? '● RUNNING' : '● '+d.bot_status;
     document.getElementById('rating').textContent = (d.rating||'--')+'/10 ⭐';
+    document.getElementById('topRating').textContent = (d.rating||'--')+'/10';
+    document.getElementById('topRatingLabel').textContent = d.rating_label||'';
     document.getElementById('fillrate').textContent = (d.fill_rate!==undefined ? d.fill_rate.toFixed(2) : '--')+'%';
     document.getElementById('slippage').textContent = (d.slippage!==undefined ? d.slippage.toFixed(2) : '--')+' bps';
     document.getElementById('supblock').textContent = (d.supervisor_block!==undefined ? d.supervisor_block.toFixed(1) : '--')+'% BLOCK';
