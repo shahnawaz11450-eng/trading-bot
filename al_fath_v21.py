@@ -1098,14 +1098,13 @@ class Ind:
 
 FEATURE_COLS = [
     'rsi_14','macd_hist','bb_pct','atr_pct','obv_momentum',
-    'vwap_dist','stoch_k','stoch_d','pseudo_cvd_momentum',
+    'vwap_dist','stoch_k','stoch_d',
     'williams_r','cci_20','momentum_10','vol_momentum',
-    'hl_range','close_position','is_missing_bar',
+    'hl_range','close_position',
     # v22 Alpha Features
-    'funding_rate','funding_extreme','funding_negative',
-    'oi_change','oi_rising',
-    'rvol','vol_breakout','atr_expansion',
-    'bearish_divergence','bullish_divergence'
+    'funding_rate','funding_extreme',
+    'oi_change',
+    'rvol','vol_breakout','atr_expansion'
 ]
 
 
