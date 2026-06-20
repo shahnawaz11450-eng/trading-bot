@@ -67,6 +67,9 @@ footer{padding:10px 20px;border-top:1px solid #1a2d45;display:flex;justify-conte
     <div class="srow"><span class="sl">TRADES</span><span id="tradecount">--</span></div>
     <div class="srow"><span class="sl">PBO</span><span class="green" id="pbo">--%</span></div>
     <div class="srow"><span class="sl">DRIFT</span><span class="red" id="drift">--/26</span></div>
+    <div class="srow"><span class="sl">LONG POSITIONS</span><span class="green" id="longcount">--</span></div>
+    <div class="srow"><span class="sl">SHORT POSITIONS</span><span class="red" id="shortcount">--</span></div>
+    <div class="srow"><span class="sl">TOTAL P&amp;L</span><span id="totalpnl">--%</span></div>
   </div>
   <div class="panel">
     <div class="ptitle">● VPS MONITOR · 151.185.42.131</div>
@@ -123,6 +126,13 @@ async function fetchBotStatus(){
     document.getElementById('tradecount').textContent = (d.trade_count!==undefined ? d.trade_count.toLocaleString('en-US') : '--');
     document.getElementById('pbo').textContent = (d.pbo_supervised!==undefined ? d.pbo_supervised.toFixed(2) : '--')+'%';
     document.getElementById('drift').textContent = (d.drifted_count!==undefined ? d.drifted_count+'/'+d.drifted_total : '--/26');
+    document.getElementById('longcount').textContent = (d.long_count!==undefined ? d.long_count.toLocaleString('en-US') : '--');
+    document.getElementById('shortcount').textContent = (d.short_count!==undefined ? d.short_count.toLocaleString('en-US') : '--');
+    if (d.total_pnl_pct!==undefined) {
+      const pnlEl = document.getElementById('totalpnl');
+      pnlEl.textContent = (d.total_pnl_pct>=0?'+':'')+d.total_pnl_pct.toFixed(2)+'%';
+      pnlEl.className = d.total_pnl_pct>=0 ? 'green' : 'red';
+    }
   }catch(e){}
 }
 async function fetchP(){

@@ -12,6 +12,7 @@ import subprocess
 import re
 import json
 import time
+import pandas as pd
 import os
 from datetime import datetime, timezone
 
@@ -41,6 +42,30 @@ def log(msg: str):
     print(line, flush=True)
     with open(RUN_LOG, "a") as f:
         f.write(line + "\n")
+
+
+def get_trade_stats() -> dict:
+    """Read trade_log_reconstructed.csv and compute LONG/SHORT counts + P&L."""
+    trade_log_path = os.path.join(AL_FATH_DIR, "trade_log_reconstructed.csv")
+    try:
+        df = pd.read_csv(trade_log_path)
+        if df.empty or 'direction' not in df.columns:
+            return {}
+        long_count = int((df['direction'] == 'LONG').sum())
+        short_count = int((df['direction'] == 'SHORT').sum())
+        total_pnl_pct = float(df['net_return'].sum() * 100)
+        long_pnl_pct = float(df.loc[df['direction'] == 'LONG', 'net_return'].sum() * 100)
+        short_pnl_pct = float(df.loc[df['direction'] == 'SHORT', 'net_return'].sum() * 100)
+        return {
+            "long_count": long_count,
+            "short_count": short_count,
+            "total_pnl_pct": round(total_pnl_pct, 4),
+            "long_pnl_pct": round(long_pnl_pct, 4),
+            "short_pnl_pct": round(short_pnl_pct, 4),
+        }
+    except Exception as e:
+        log(f"WARNING: could not read trade log: {e}")
+        return {}
 
 
 def parse_output(output: str) -> dict:
@@ -93,6 +118,7 @@ def run_once():
         )
         combined_output = proc.stdout + "\n" + proc.stderr
         parsed = parse_output(combined_output)
+        trade_stats = get_trade_stats()
 
         status = {
             "last_run_utc": datetime.now(timezone.utc).isoformat(),
@@ -100,6 +126,7 @@ def run_once():
             "bot_mode": "RESEARCH_BACKTEST_ONLY",
             "live_trading": False,
             **parsed,
+            **trade_stats,
         }
 
         if not parsed:

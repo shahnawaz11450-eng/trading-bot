@@ -111,6 +111,9 @@ footer{padding:10px 20px;border-top:1px solid #e2e6eb;display:flex;justify-conte
       <div class="stat-row"><span class="sl">SLIPPAGE</span><span class="sv" id="d_slippage">-- bps</span></div>
       <div class="stat-row"><span class="sl">SUPERVISOR BLOCK</span><span class="sv" id="d_supblock">--%</span></div>
       <div class="stat-row"><span class="sl">TRADE COUNT</span><span class="sv" id="d_trades">--</span></div>
+      <div class="stat-row"><span class="sl">LONG POSITIONS</span><span class="sv green" id="d_longcount">--</span></div>
+      <div class="stat-row"><span class="sl">SHORT POSITIONS</span><span class="sv red" id="d_shortcount">--</span></div>
+      <div class="stat-row"><span class="sl">TOTAL P&amp;L</span><span class="sv" id="d_totalpnl">--%</span></div>
       <div class="stat-row"><span class="sl">REGIME</span><span class="sv blue" id="regime">TRENDING</span></div>
       <div class="stat-row"><span class="sl">SIGNAL</span><span class="sv" id="signal">FLAT</span></div>
     </div>
@@ -149,6 +152,13 @@ async function fetchBotStatus(){
     document.getElementById('d_supblock').textContent = (d.supervisor_block!==undefined ? d.supervisor_block.toFixed(1) : '--')+'%';
     document.getElementById('d_trades').textContent = (d.trade_count!==undefined ? d.trade_count.toLocaleString('en-US') : '--');
     document.getElementById('d_drift').textContent = 'DRIFT '+(d.drifted_count!==undefined ? d.drifted_count+'/'+d.drifted_total : '--/26');
+    document.getElementById('d_longcount').textContent = (d.long_count!==undefined ? d.long_count.toLocaleString('en-US') : '--');
+    document.getElementById('d_shortcount').textContent = (d.short_count!==undefined ? d.short_count.toLocaleString('en-US') : '--');
+    if (d.total_pnl_pct!==undefined) {
+      const dPnlEl = document.getElementById('d_totalpnl');
+      dPnlEl.textContent = (d.total_pnl_pct>=0?'+':'')+d.total_pnl_pct.toFixed(2)+'%';
+      dPnlEl.style.color = d.total_pnl_pct>=0 ? '#0a8a4a' : '#d42b2b';
+    }
     document.getElementById('d_supblock2').textContent = (d.supervisor_block!==undefined ? d.supervisor_block.toFixed(1) : '--')+'% BLOCK';
   }catch(e){}
 }
