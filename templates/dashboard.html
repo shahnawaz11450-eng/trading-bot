@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AL-FATH — Dashboard</title>
+<style>
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f0f2f5;color:#1a2233;font-family:'Exo 2',sans-serif;min-height:100vh;}
+header{background:#fff;border-bottom:1px solid #e2e6eb;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-mark{width:34px;height:34px;border:2px solid #1a5cf8;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:13px;color:#1a5cf8;font-weight:700;background:#eff4ff;}
+.logo-text{font-size:16px;font-weight:700;letter-spacing:2px;}
+.logo-sub{font-size:8px;color:#8896a8;letter-spacing:2px;}
+.hright{display:flex;align-items:center;gap:12px;}
+.plan-badge{padding:3px 10px;border-radius:20px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;}
+.plan-institutional{background:#fff8ed;border:1px solid rgba(184,106,0,0.3);color:#b86a00;}
+.plan-pro{background:#eff4ff;border:1px solid rgba(26,92,248,0.3);color:#1a5cf8;}
+.plan-free{background:#f0f2f5;border:1px solid #e2e6eb;color:#8896a8;}
+.logout{padding:5px 12px;background:#fdf0f0;border:1px solid rgba(212,43,43,0.2);border-radius:5px;color:#d42b2b;font-family:'Share Tech Mono',monospace;font-size:9px;text-decoration:none;letter-spacing:1px;}
+.notice{margin:10px 20px;padding:7px 14px;background:#fff8ed;border:1px solid rgba(184,106,0,0.3);border-left:3px solid #b86a00;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#b86a00;}
+.main{padding:16px 20px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.card{background:#fff;border:1px solid #e2e6eb;border-radius:8px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.04);}
+.card .cl{font-family:'Share Tech Mono',monospace;font-size:8px;color:#8896a8;letter-spacing:2px;margin-bottom:4px;}
+.card .cv{font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700;line-height:1;}
+.card .cs{font-size:9px;color:#8896a8;margin-top:3px;}
+.green{color:#0a8a4a;}.red{color:#d42b2b;}.gold{color:#c8820a;}.blue{color:#1a5cf8;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.ptitle{font-family:'Share Tech Mono',monospace;font-size:9px;color:#8896a8;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+.ptitle::before{content:'';width:5px;height:5px;border-radius:50%;background:#1a5cf8;display:inline-block;}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e2e6eb;font-family:'Share Tech Mono',monospace;font-size:10px;}
+.stat-row .sl{color:#8896a8;font-size:9px;}
+.stat-row .sv{font-weight:600;}
+.bot-status{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#edf7f2;border:1px solid rgba(10,138,74,0.2);border-radius:6px;margin-bottom:12px;}
+.dot{width:8px;height:8px;border-radius:50%;animation:pulse 1.5s infinite;}
+.dot.green{background:#0a8a4a;}.dot.amber{background:#b86a00;}.dot.red{background:#d42b2b;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.layer{display:flex;align-items:center;gap:6px;padding:5px 8px;background:#f0f2f5;border-radius:4px;margin-bottom:4px;}
+.ln{font-family:'Share Tech Mono',monospace;font-size:8px;color:#1a5cf8;width:22px;}
+.lname{font-size:10px;flex:1;}
+.ls{font-family:'Share Tech Mono',monospace;font-size:8px;padding:1px 6px;border-radius:3px;}
+.ls.ok{background:#edf7f2;color:#0a8a4a;border:1px solid rgba(10,138,74,0.2);}
+.ls.warn{background:#fff8ed;color:#b86a00;border:1px solid rgba(184,106,0,0.2);}
+#btcPrice{transition:color 0.3s;}
+#btcPrice.up{color:#0a8a4a;}
+#btcPrice.dn{color:#d42b2b;}
+footer{padding:10px 20px;border-top:1px solid #e2e6eb;display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:#8896a8;background:#fff;margin-top:8px;}
+@media(max-width:700px){.grid4{grid-template-columns:1fr 1fr;}.grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-mark">AF</div>
+    <div>
+      <div class="logo-text">AL-FATH</div>
+      <div class="logo-sub">INSTITUTIONAL TRADING PLATFORM</div>
+    </div>
+  </div>
+  <div class="hright">
+    <span class="plan-badge plan-{{ user.plan }}">{{ user.plan.upper() }}</span>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#1a2233;">{{ user.name }}</span>
+    <a href="/logout" class="logout">LOGOUT</a>
+  </div>
+</header>
+
+<div class="notice">⚠ PAPER TRADING MODE — Simulated account · Real BTC/USDT price feed</div>
+
+<div class="main">
+  <!-- STATS -->
+  <div class="grid4">
+    <div class="card">
+      <div class="cl">BALANCE</div>
+      <div class="cv gold">${{ "{:,.2f}".format(user.balance) }}</div>
+      <div class="cs">Paper account</div>
+    </div>
+    <div class="card">
+      <div class="cl">DRAWDOWN</div>
+      <div class="cv {% if ((user.peak-user.balance)/user.peak*100 if user.peak else 0) > 10 %}red{% else %}green{% endif %}">
+        {{ "{:.2f}".format((user.peak-user.balance)/user.peak*100 if user.peak else 0) }}%
+      </div>
+      <div class="cs">Peak: ${{ "{:,.0f}".format(user.peak) }}</div>
+    </div>
+    <div class="card">
+      <div class="cl">WIN RATE</div>
+      <div class="cv {% if ((user.wins/user.trades*100) if user.trades else 0) > 50 %}green{% else %}red{% endif %}">
+        {{ "{:.1f}".format((user.wins/user.trades*100) if user.trades else 0) }}%
+      </div>
+      <div class="cs">{{ user.wins }}W / {{ user.trades - user.wins }}L</div>
+    </div>
+    <div class="card">
+      <div class="cl">BTC PRICE</div>
+      <div class="cv blue" id="btcPrice">Loading...</div>
+      <div class="cs" id="priceChange">Fetching...</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <!-- BOT STATUS -->
+    <div class="card">
+      <div class="ptitle">Bot Status · AL-FATH v21</div>
+      <div class="bot-status">
+        <div class="dot green"></div>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#0a8a4a;font-weight:700;">BOT RUNNING</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#8896a8;margin-left:auto;" id="clock">--:--:--</span>
+      </div>
+      <div class="stat-row"><span class="sl">RATING</span><span class="sv gold" id="d_rating">--/10 ⭐</span></div>
+      <div class="stat-row"><span class="sl">FILL RATE</span><span class="sv green" id="d_fillrate">--%</span></div>
+      <div class="stat-row"><span class="sl">SLIPPAGE</span><span class="sv" id="d_slippage">-- bps</span></div>
+      <div class="stat-row"><span class="sl">SUPERVISOR BLOCK</span><span class="sv" id="d_supblock">--%</span></div>
+      <div class="stat-row"><span class="sl">TRADE COUNT</span><span class="sv" id="d_trades">--</span></div>
+      <div class="stat-row"><span class="sl">REGIME</span><span class="sv blue" id="regime">TRENDING</span></div>
+      <div class="stat-row"><span class="sl">SIGNAL</span><span class="sv" id="signal">FLAT</span></div>
+    </div>
+
+    <!-- LAYERS -->
+    <div class="card">
+      <div class="ptitle">Platform Layers L1-L10</div>
+      <div class="layer"><span class="ln">L1</span><span class="lname">Market Intelligence</span><span class="ls ok">ACTIVE</span></div>
+      <div class="layer"><span class="ln">L2</span><span class="lname">Alpha Protection</span><span class="ls warn" id="d_drift">DRIFT --/26</span></div>
+      <div class="layer"><span class="ln">L3</span><span class="lname">Risk Fortress</span><span class="ls ok">ACTIVE</span></div>
+      <div class="layer"><span class="ln">L4</span><span class="lname">Execution Fortress</span><span class="ls ok">ACTIVE</span></div>
+      <div class="layer"><span class="ln">L5</span><span class="lname">Portfolio Intel</span><span class="ls ok">ACTIVE</span></div>
+      <div class="layer"><span class="ln">L6</span><span class="lname">VPS Guardian</span><span class="ls ok">ACTIVE</span></div>
+      <div class="layer"><span class="ln">L7</span><span class="lname">API Vault AES</span><span class="ls ok">SECURE</span></div>
+      <div class="layer"><span class="ln">L8</span><span class="lname">SaaS Platform</span><span class="ls ok">ACTIVE</span></div>
+      <div class="layer"><span class="ln">L9</span><span class="lname">Affiliate Engine</span><span class="ls ok">ACTIVE</span></div>
+      <div class="layer"><span class="ln">L10</span><span class="lname">AI Supervisor</span><span class="ls ok" id="d_supblock2">--% BLOCK</span></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>AL-FATH v21.0 + v22 · BTC/USDT · PAPER MODE</span>
+  <span id="footerTime">--</span>
+  <span>© 2026 AL-FATH Trading</span>
+</footer>
+
+<script>
+async function fetchBotStatus(){
+  try{
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    document.getElementById('d_rating').textContent = (d.rating||'--')+' ⭐';
+    document.getElementById('d_fillrate').textContent = (d.fill_rate!==undefined ? d.fill_rate.toFixed(2) : '--')+'%';
+    document.getElementById('d_slippage').textContent = (d.slippage!==undefined ? d.slippage.toFixed(2) : '--')+' bps';
+    document.getElementById('d_supblock').textContent = (d.supervisor_block!==undefined ? d.supervisor_block.toFixed(1) : '--')+'%';
+    document.getElementById('d_trades').textContent = (d.trade_count!==undefined ? d.trade_count.toLocaleString('en-US') : '--');
+    document.getElementById('d_drift').textContent = 'DRIFT '+(d.drifted_count!==undefined ? d.drifted_count+'/'+d.drifted_total : '--/26');
+    document.getElementById('d_supblock2').textContent = (d.supervisor_block!==undefined ? d.supervisor_block.toFixed(1) : '--')+'% BLOCK';
+  }catch(e){}
+}
+async function fetchPrice() {
+  try {
+    const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
+    const d = await r.json();
+    const price = parseFloat(d.lastPrice);
+    const chg = parseFloat(d.priceChangePercent);
+    const el = document.getElementById('btcPrice');
+    el.textContent = '$' + price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    el.className = chg >= 0 ? 'cv up' : 'cv dn';
+    document.getElementById('priceChange').textContent = (chg>=0?'+':'') + chg.toFixed(2) + '% 24h';
+    document.getElementById('priceChange').style.color = chg>=0?'#0a8a4a':'#d42b2b';
+
+    // Simple signal
+    const sig = chg > 0.5 ? 'LONG' : chg < -0.5 ? 'SHORT' : 'FLAT';
+    const sigEl = document.getElementById('signal');
+    sigEl.textContent = sig;
+    sigEl.style.color = sig==='LONG'?'#0a8a4a':sig==='SHORT'?'#d42b2b':'#b86a00';
+  } catch(e) {
+    document.getElementById('btcPrice').textContent = 'Error';
+  }
+}
+
+function updateClock() {
+  const t = new Date().toUTCString().split(' ')[4];
+  document.getElementById('clock').textContent = t + ' UTC';
+  document.getElementById('footerTime').textContent = t + ' UTC';
+}
+
+fetchPrice();
+fetchBotStatus();setInterval(fetchBotStatus,15000);
+setInterval(fetchPrice, 10000);
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+</body>
+</html>

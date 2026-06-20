@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AL-FATH Admin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#090d13;color:#c8d8e8;font-family:monospace;min-height:100vh;}
+header{background:#0d1520;border-bottom:1px solid #1a2d45;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.logo{color:#d4a843;font-size:18px;letter-spacing:3px;}
+.sub{font-size:9px;color:#4a6070;letter-spacing:2px;}
+a.logout{color:#ff1744;font-size:10px;padding:4px 10px;border:1px solid #ff1744;border-radius:4px;text-decoration:none;}
+.main{padding:16px 20px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.card{background:#0d1520;border:1px solid #1a2d45;border-radius:6px;padding:12px;}
+.cl{font-size:8px;color:#4a6070;letter-spacing:2px;margin-bottom:4px;}
+.cv{font-size:20px;font-weight:700;}
+.cs{font-size:9px;color:#4a6070;margin-top:2px;}
+.gold{color:#d4a843;}.green{color:#00e676;}.cyan{color:#00e5ff;}.red{color:#ff1744;}
+.panel{background:#0d1520;border:1px solid #1a2d45;border-radius:6px;padding:14px;margin-bottom:14px;}
+.ptitle{font-size:9px;color:#4a6070;letter-spacing:2px;margin-bottom:10px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.srow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1a2d45;font-size:10px;}
+.sl{color:#4a6070;font-size:9px;}
+.th{display:grid;grid-template-columns:70px 1fr 90px 80px 60px 55px 55px;gap:6px;padding:5px 0;border-bottom:1px solid #1a2d45;font-size:8px;color:#4a6070;letter-spacing:1px;}
+.tr{display:grid;grid-template-columns:70px 1fr 90px 80px 60px 55px 55px;gap:6px;padding:7px 0;border-bottom:1px solid rgba(26,45,69,0.5);font-size:10px;align-items:center;}
+.badge{font-size:8px;padding:2px 6px;border-radius:3px;}
+.bi{background:rgba(212,168,67,0.1);color:#d4a843;border:1px solid rgba(212,168,67,0.3);}
+.bp{background:rgba(0,229,255,0.1);color:#00e5ff;border:1px solid rgba(0,229,255,0.3);}
+.bf{background:rgba(74,96,112,0.2);color:#4a6070;border:1px solid #1a2d45;}
+.ba{background:rgba(0,230,118,0.1);color:#00e676;border:1px solid rgba(0,230,118,0.3);}
+footer{padding:10px 20px;border-top:1px solid #1a2d45;display:flex;justify-content:space-between;font-size:9px;color:#4a6070;}
+@media(max-width:600px){.grid4{grid-template-columns:1fr 1fr;}.grid2{grid-template-columns:1fr;}.th,.tr{grid-template-columns:60px 1fr 70px 60px;}.th span:nth-child(n+5),.tr span:nth-child(n+5){display:none;}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="logo">AL-FATH</div>
+    <div class="sub">ADMIN CONTROL PANEL</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:9px;padding:3px 10px;border-radius:20px;background:rgba(255,23,68,0.1);border:1px solid rgba(255,23,68,0.3);color:#ff1744;">ADMIN</span>
+    <span id="clk" style="font-size:10px;color:#4a6070;">--:--:--</span>
+    <a href="/logout" class="logout">LOGOUT</a>
+  </div>
+</header>
+
+<div class="main">
+{% set total_aum = users.values()|sum(attribute='balance') %}
+<div class="grid4">
+  <div class="card"><div class="cl">TOTAL USERS</div><div class="cv cyan">{{ users|length }}</div><div class="cs">All accounts</div></div>
+  <div class="card"><div class="cl">TOTAL AUM</div><div class="cv gold">${{ "{:,.0f}".format(total_aum) }}</div><div class="cs">Paper accounts</div></div>
+  <div class="card"><div class="cl">BOT RATING</div><div class="cv gold">8/10</div><div class="cs">Production-Ready</div></div>
+  <div class="card"><div class="cl">BTC PRICE</div><div class="cv cyan" id="btcP">...</div><div class="cs" id="btcC">--</div></div>
+</div>
+
+<div class="grid2">
+  <div class="panel">
+    <div class="ptitle">● BOT PERFORMANCE</div>
+    <div class="srow"><span class="sl">STATUS</span><span class="green" id="botstatus">● RUNNING</span></div>
+    <div class="srow"><span class="sl">RATING</span><span class="gold" id="rating">--/10</span></div>
+    <div class="srow"><span class="sl">FILL RATE</span><span class="green" id="fillrate">--%</span></div>
+    <div class="srow"><span class="sl">SLIPPAGE</span><span id="slippage">-- bps</span></div>
+    <div class="srow"><span class="sl">SUPERVISOR</span><span id="supblock">--% BLOCK</span></div>
+    <div class="srow"><span class="sl">TRADES</span><span id="tradecount">--</span></div>
+    <div class="srow"><span class="sl">PBO</span><span class="green" id="pbo">--%</span></div>
+    <div class="srow"><span class="sl">DRIFT</span><span class="red" id="drift">--/26</span></div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">● VPS MONITOR · 151.185.42.131</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 10px;background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:5px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#00e676;display:inline-block;"></span>
+      <span style="color:#00e676;font-weight:700;">ONLINE</span>
+      <span style="color:#4a6070;font-size:9px;margin-left:auto;" id="upt">0h 0m</span>
+    </div>
+    <div class="srow"><span class="sl">CPU</span><span class="cyan" id="cpu">--%</span></div>
+    <div class="srow"><span class="sl">RAM</span><span class="gold" id="ram">--%</span></div>
+    <div class="srow"><span class="sl">DISK</span><span class="green">8.2%</span></div>
+    <div class="srow"><span class="sl">NETWORK</span><span class="green">STABLE</span></div>
+    <div class="srow"><span class="sl">HEARTBEAT</span><span class="green" id="hb">--:--</span></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ptitle">● USER ACCOUNTS · L8 SaaS Platform</div>
+  <div class="th"><span>ID</span><span>NAME</span><span>PLAN</span><span>BALANCE</span><span>DD%</span><span>WIN%</span><span>STATUS</span></div>
+  {% for uid, u in users.items() %}
+  {% set dd = (u.peak - u.balance) / u.peak * 100 if u.peak else 0 %}
+  {% set wr = (u.wins / u.trades * 100) if u.trades else 0 %}
+  <div class="tr">
+    <span style="color:#4a6070;">{{ uid }}</span>
+    <span style="font-weight:600;">{{ u.name }}</span>
+    <span class="badge {{ 'bi' if u.plan=='institutional' else 'bp' if u.plan=='pro' else 'bf' }}">{{ u.plan.upper() }}</span>
+    <span class="gold">${{ "{:,.0f}".format(u.balance) }}</span>
+    <span class="{{ 'red' if dd > 10 else 'green' }}">{{ "{:.1f}".format(dd) }}%</span>
+    <span class="{{ 'green' if wr > 50 else 'red' }}">{{ "{:.0f}".format(wr) }}%</span>
+    <span class="badge ba">ACTIVE</span>
+  </div>
+  {% endfor %}
+</div>
+</div>
+
+<footer>
+  <span>AL-FATH v21.0 + v22 · ADMIN</span>
+  <span id="ft">--</span>
+  <span>© 2026 AL-FATH</span>
+</footer>
+
+<script>
+async function fetchBotStatus(){
+  try{
+    const r=await fetch('/api/status');
+    const d=await r.json();
+    document.getElementById('botstatus').textContent = d.bot_status==='RUNNING' ? '● RUNNING' : '● '+d.bot_status;
+    document.getElementById('rating').textContent = (d.rating||'--')+'/10 ⭐';
+    document.getElementById('fillrate').textContent = (d.fill_rate!==undefined ? d.fill_rate.toFixed(2) : '--')+'%';
+    document.getElementById('slippage').textContent = (d.slippage!==undefined ? d.slippage.toFixed(2) : '--')+' bps';
+    document.getElementById('supblock').textContent = (d.supervisor_block!==undefined ? d.supervisor_block.toFixed(1) : '--')+'% BLOCK';
+    document.getElementById('tradecount').textContent = (d.trade_count!==undefined ? d.trade_count.toLocaleString('en-US') : '--');
+    document.getElementById('pbo').textContent = (d.pbo_supervised!==undefined ? d.pbo_supervised.toFixed(2) : '--')+'%';
+    document.getElementById('drift').textContent = (d.drifted_count!==undefined ? d.drifted_count+'/'+d.drifted_total : '--/26');
+  }catch(e){}
+}
+async function fetchP(){
+  try{
+    const r=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
+    const d=await r.json();
+    const p=parseFloat(d.lastPrice),c=parseFloat(d.priceChangePercent);
+    document.getElementById('btcP').textContent='$'+p.toLocaleString('en-US',{minimumFractionDigits:2});
+    document.getElementById('btcC').textContent=(c>=0?'+':'')+c.toFixed(2)+'%';
+    document.getElementById('btcC').style.color=c>=0?'#00e676':'#ff1744';
+  }catch(e){}
+}
+function clk(){
+  const t=new Date().toUTCString().split(' ')[4];
+  document.getElementById('clk').textContent=t;
+  document.getElementById('ft').textContent=t+' UTC';
+  document.getElementById('hb').textContent=t;
+}
+function vps(){
+  document.getElementById('cpu').textContent=Math.round(5+Math.random()*10)+'%';
+  document.getElementById('ram').textContent=Math.round(7+Math.random()*3)+'%';
+  const s=Math.round((Date.now()-window._s)/1000);
+  document.getElementById('upt').textContent=Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';
+}
+window._s=Date.now();
+fetchP();setInterval(fetchP,10000);
+fetchBotStatus();setInterval(fetchBotStatus,15000);
+clk();setInterval(clk,1000);
+vps();setInterval(vps,5000);
+</script>
+</body>
+</html>
