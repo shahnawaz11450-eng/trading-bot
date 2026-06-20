@@ -175,9 +175,9 @@ async function fetchPrice() {
 }
 
 function updateClock() {
-  const t = new Date().toUTCString().split(' ')[4];
-  document.getElementById('clock').textContent = t + ' UTC';
-  document.getElementById('footerTime').textContent = t + ' UTC';
+  const t = new Date(Date.now()+5.5*3600000).toUTCString().split(' ')[4];
+  document.getElementById('clock').textContent = t + ' IST';
+  document.getElementById('footerTime').textContent = t + ' IST';
 }
 
 fetchPrice();

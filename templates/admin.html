@@ -136,9 +136,9 @@ async function fetchP(){
   }catch(e){}
 }
 function clk(){
-  const t=new Date().toUTCString().split(' ')[4];
+  const t=new Date(Date.now()+5.5*3600000).toUTCString().split(' ')[4];
   document.getElementById('clk').textContent=t;
-  document.getElementById('ft').textContent=t+' UTC';
+  document.getElementById('ft').textContent=t+' IST';
   document.getElementById('hb').textContent=t;
 }
 function vps(){
