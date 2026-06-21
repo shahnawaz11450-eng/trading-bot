@@ -70,6 +70,12 @@ footer{padding:10px 20px;border-top:1px solid #1a2d45;display:flex;justify-conte
     <div class="srow"><span class="sl">LONG POSITIONS</span><span class="green" id="longcount">--</span></div>
     <div class="srow"><span class="sl">SHORT POSITIONS</span><span class="red" id="shortcount">--</span></div>
     <div class="srow"><span class="sl">TOTAL P&amp;L</span><span id="totalpnl">--%</span></div>
+    <div class="srow" style="margin-top:8px;padding-top:8px;border-top:1px solid #2a3a55;"><span class="sl">SYSTEM HEALTH</span><span class="green" id="syshealth">--/--</span></div>
+    <div class="srow"><span class="sl">TRADING QUALITY</span><span class="red" id="tradequality">--/--</span></div>
+  </div>
+  <div class="panel" style="border:1px solid #d42b2b;background:#1a0f0f;">
+    <div class="ptitle" style="color:#ff6b6b;">⚠ VERDICT</div>
+    <div id="verdict" style="font-size:14px;font-weight:600;color:#ffaaaa;padding:8px 0;">Loading...</div>
   </div>
   <div class="panel">
     <div class="ptitle">● VPS MONITOR · 151.185.42.131</div>
@@ -126,6 +132,18 @@ async function fetchBotStatus(){
     document.getElementById('tradecount').textContent = (d.trade_count!==undefined ? d.trade_count.toLocaleString('en-US') : '--');
     document.getElementById('pbo').textContent = (d.pbo_supervised!==undefined ? d.pbo_supervised.toFixed(2) : '--')+'%';
     document.getElementById('drift').textContent = (d.drifted_count!==undefined ? d.drifted_count+'/'+d.drifted_total : '--/26');
+    if (d.system_health_score!==undefined) {
+      document.getElementById('syshealth').textContent = d.system_health_score+'/'+d.system_health_total;
+    }
+    if (d.trading_quality_score!==undefined) {
+      const tqEl = document.getElementById('tradequality');
+      tqEl.textContent = d.trading_quality_score+'/'+d.trading_quality_total;
+      const tqRatio = d.trading_quality_score / d.trading_quality_total;
+      tqEl.className = tqRatio >= 0.7 ? 'green' : (tqRatio >= 0.4 ? 'gold' : 'red');
+    }
+    if (d.verdict) {
+      document.getElementById('verdict').textContent = d.verdict;
+    }
     document.getElementById('longcount').textContent = (d.long_count!==undefined ? d.long_count.toLocaleString('en-US') : '--');
     document.getElementById('shortcount').textContent = (d.short_count!==undefined ? d.short_count.toLocaleString('en-US') : '--');
     if (d.total_pnl_pct!==undefined) {

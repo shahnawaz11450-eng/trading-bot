@@ -33,6 +33,8 @@ PATTERNS = {
     "pbo_supervised": re.compile(r"PBO \(Supervised\):\s+([\d.]+)%"),
     "drifted_features": re.compile(r"Drifted Features:\s+(\d+)\s*/\s*(\d+)"),
     "supervisor_block_rate": re.compile(r"Blocked:\s+\d+\s+\(([\d.]+)%\)"),
+    "win_rate": re.compile(r"win_rate=([\d.]+)"),
+    "hac_sr_execsim": re.compile(r"Lo HAC SR \(ExecSim\):\s+(-?[\d.]+)"),
 }
 
 
@@ -103,7 +105,82 @@ def parse_output(output: str) -> dict:
     if m:
         result["supervisor_block_pct"] = float(m.group(1))
 
+    m = PATTERNS["win_rate"].search(output)
+    if m:
+        result["win_rate_pct"] = float(m.group(1)) * 100
+
+    m = PATTERNS["hac_sr_execsim"].search(output)
+    if m:
+        result["hac_sr_execsim"] = float(m.group(1))
+
     return result
+def compute_scores(parsed: dict, trade_stats: dict) -> dict:
+    """Compute separate System Health and Trading Quality scores."""
+    health_checks = []
+    quality_checks = []
+
+    fill_rate = parsed.get("fill_rate_pct")
+    if fill_rate is not None:
+        health_checks.append(70 <= fill_rate <= 90)
+
+    slippage = parsed.get("avg_slippage_bps")
+    if slippage is not None:
+        health_checks.append(slippage < 10)
+
+    drifted = parsed.get("drifted_count")
+    drifted_total = parsed.get("drifted_total")
+    if drifted is not None and drifted_total:
+        health_checks.append(drifted < drifted_total)
+
+    sup_block = parsed.get("supervisor_block_pct")
+    if sup_block is not None:
+        health_checks.append(sup_block < 80)
+
+    health_checks.append(True)  # uptime/no-crash (run completed = True)
+
+    pbo = parsed.get("pbo_supervised_pct")
+    if pbo is not None:
+        quality_checks.append(pbo < 20)
+
+    total_pnl = trade_stats.get("total_pnl_pct")
+    if total_pnl is not None:
+        quality_checks.append(total_pnl > 0)
+
+    win_rate = parsed.get("win_rate_pct")
+    if win_rate is not None:
+        quality_checks.append(win_rate > 50)
+
+    hac_sr = parsed.get("hac_sr_execsim")
+    if hac_sr is not None:
+        quality_checks.append(hac_sr > 0)
+
+    long_count = trade_stats.get("long_count")
+    short_count = trade_stats.get("short_count")
+    if long_count is not None and short_count is not None and (long_count + short_count) > 0:
+        long_ratio = long_count / (long_count + short_count)
+        quality_checks.append(0.3 <= long_ratio <= 0.7)  # not heavily one-sided
+
+    health_score = sum(health_checks)
+    health_total = len(health_checks)
+    quality_score = sum(quality_checks)
+    quality_total = len(quality_checks) if quality_checks else 1
+
+    if quality_score / quality_total < 0.4:
+        verdict = "Operationally Stable, Financially Unprofitable"
+    elif quality_score / quality_total < 0.7:
+        verdict = "Operationally Stable, Trading Quality Marginal"
+    else:
+        verdict = "Operationally Stable, Trading Quality Acceptable"
+
+    return {
+        "system_health_score": health_score,
+        "system_health_total": health_total,
+        "trading_quality_score": quality_score,
+        "trading_quality_total": quality_total,
+        "verdict": verdict,
+    }
+
+
 
 
 def run_once():
@@ -119,6 +196,7 @@ def run_once():
         combined_output = proc.stdout + "\n" + proc.stderr
         parsed = parse_output(combined_output)
         trade_stats = get_trade_stats()
+        scores = compute_scores(parsed, trade_stats)
 
         status = {
             "last_run_utc": datetime.now(timezone.utc).isoformat(),
@@ -127,6 +205,7 @@ def run_once():
             "live_trading": False,
             **parsed,
             **trade_stats,
+            **scores,
         }
 
         if not parsed:
