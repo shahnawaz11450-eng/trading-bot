@@ -67,7 +67,7 @@ def add_microstructure_features(df):
 
 def main():
     print("Loading BTC 1m data...")
-    df = pd.read_csv('btc_1m.csv')
+    df = pd.read_csv('sol_1m.csv')
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df = df.set_index('timestamp').sort_index()
     print(f"Data loaded: {len(df)} bars from {df.index[0]} to {df.index[-1]}")
@@ -85,8 +85,8 @@ def main():
         print(f"Funding rate merged: {df['funding_rate'].notna().sum()} bars")
     
     # Save
-    df.to_csv('btc_1m_enhanced.csv')
-    print(f"Saved: btc_1m_enhanced.csv ({len(df)} rows)")
+    df.to_csv('sol_enhanced.csv')
+    print(f"Saved: sol_enhanced.csv ({len(df)} rows)")
     
     # Stats
     new_cols = ['buy_pressure','vwm_5','vwm_20','liq_proxy',
