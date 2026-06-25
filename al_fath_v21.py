@@ -1930,7 +1930,7 @@ def run_v21(csv_path: Optional[str] = None,
 
     # ── 3. Labels (Conservative ATR barriers) ────────────────────────────
     labeler = LabelEngine(pt_atr=2.0, sl_atr=2.0, horizon=60, ambiguity_mode="optimistic")
-    exec_gate = ExecutionAlphaGate(min_edge_bps=50, min_depth_proxy=0.5, max_vol_regime=0.70, block_toxic_flow=True, block_sweeps=True)
+    exec_gate = ExecutionAlphaGate(min_edge_bps=15, min_depth_proxy=0.3, max_vol_regime=0.80, block_toxic_flow=False, block_sweeps=False)
     logger.info("[L2] Triple Barrier Labels [pt=3x, sl=1.5x, h=24]...")
     events  = labeler.generate_labels(df_feat)
     w       = labeler.exact_uniqueness(events)
@@ -2094,8 +2094,8 @@ def run_v21(csv_path: Optional[str] = None,
 
     # ── 10. L4 Strict Execution Simulation ───────────────────────────────
     logger.info("[L4] Strict Execution Simulation...")
-    exec_sim = ExecutionSimulator(account_size_usd=50_000, max_pos_pct=0.15,
-                                  latency_bars=2, base_taker_bps=5.0)
+    exec_sim = ExecutionSimulator(account_size_usd=50_000, max_pos_pct=0.10,
+                                  latency_bars=1, base_taker_bps=2.0)
     exec_out = exec_sim.simulate(
         managed_sig, df_feat['close'].values,
         df_feat['volume'].values, df_feat['ewma_vol'].values
