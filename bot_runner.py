@@ -17,11 +17,11 @@ import os
 from datetime import datetime, timezone
 
 # ── CONFIG ───────────────────────────────────────────────────────────────
-AL_FATH_DIR = "/root/al_fath_v21"
+AL_FATH_DIR = "/workspaces/trading-bot"
 AL_FATH_SCRIPT = os.path.join(AL_FATH_DIR, "al_fath_v21.py")
-PYTHON_BIN = os.path.join(AL_FATH_DIR, "venv", "bin", "python")
-STATUS_FILE = "/var/www/alfath/bot_status.json"
-RUN_LOG = "/var/www/alfath/runner.log"
+PYTHON_BIN = "python3"
+STATUS_FILE = "/tmp/bot_status.json"
+RUN_LOG = "/tmp/runner.log"
 INTERVAL_SECONDS = 15 * 60  # 15 minutes
 
 # ── REGEX PATTERNS ───────────────────────────────────────────────────────
