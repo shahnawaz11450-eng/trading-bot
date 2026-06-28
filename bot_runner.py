@@ -187,7 +187,7 @@ def run_once():
     log("Starting al_fath_v21.py run...")
     try:
         proc = subprocess.run(
-            [PYTHON_BIN, AL_FATH_SCRIPT, '--download', '--csv', 'sol_enhanced.csv'],
+            [PYTHON_BIN, AL_FATH_SCRIPT, '--download'],
             cwd=AL_FATH_DIR,
             capture_output=True,
             text=True,
