@@ -112,7 +112,7 @@ def admin():
 @app.route('/api/status')
 @login_required
 def api_status():
-    status_file = '/var/www/alfath/bot_status.json'
+    status_file = '/tmp/bot_status.json'
     try:
         with open(status_file, 'r') as f:
             data = json.load(f)
