@@ -9,3 +9,4 @@ numba
 cryptography
 requests
 werkzeug
+gunicorn
