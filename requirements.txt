@@ -8,3 +8,4 @@ scipy
 requests
 cryptography
 werkzeug
+tensorflow-cpu
