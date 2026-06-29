@@ -5,7 +5,8 @@ lightgbm
 xgboost
 scikit-learn
 scipy
-numba
-cryptography
 requests
+cryptography
 werkzeug
+tensorflow
+torch
