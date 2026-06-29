@@ -10,3 +10,4 @@ cryptography
 werkzeug
 tensorflow-cpu
 tensorflow-cpu
+torch
