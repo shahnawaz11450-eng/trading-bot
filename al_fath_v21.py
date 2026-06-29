@@ -56,7 +56,12 @@ import scipy.stats as stats
 import lightgbm as lgb
 from sklearn.isotonic import IsotonicRegression
 from sklearn.model_selection import StratifiedKFold
-from numba import njit
+try:
+    from numba import njit
+except:
+    def njit(*args, **kwargs):
+        def decorator(f): return f
+        return decorator
 from cryptography.fernet import Fernet
 
 warnings.filterwarnings('ignore')
