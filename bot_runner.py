@@ -17,7 +17,7 @@ import os
 from datetime import datetime, timezone
 
 # ── CONFIG ───────────────────────────────────────────────────────────────
-AL_FATH_DIR = os.path.dirname(os.path.abspath(__file__))
+AL_FATH_DIR = "/workspaces/trading-bot"
 AL_FATH_SCRIPT = os.path.join(AL_FATH_DIR, "al_fath_v21.py")
 PYTHON_BIN = "python3"
 STATUS_FILE = "/tmp/bot_status.json"
@@ -187,7 +187,7 @@ def run_once():
     log("Starting al_fath_v21.py run...")
     try:
         proc = subprocess.run(
-            [PYTHON_BIN, AL_FATH_SCRIPT, '--download'],
+            [PYTHON_BIN, AL_FATH_SCRIPT, '--download', '--csv', 'sol_enhanced.csv'],
             cwd=AL_FATH_DIR,
             capture_output=True,
             text=True,
