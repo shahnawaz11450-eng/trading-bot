@@ -9,3 +9,4 @@ requests
 cryptography
 werkzeug
 tensorflow-cpu
+tensorflow-cpu
